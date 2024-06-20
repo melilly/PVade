@@ -9,7 +9,7 @@ from basix.ufl import element
 from ufl import (FacetNormal, Measure, TestFunction, TrialFunction,
                  as_vector, div, dot, dx, inner, lhs, grad, nabla_grad, rhs)
 
-from dolfinx.fem import (Constant, Function, functionspace,
+from dolfinx.fem import (Constant, Function, functionspace, FunctionSpace,
                          assemble_scalar, dirichletbc, form, locate_dofs_topological, set_bc)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                create_vector, create_matrix, set_bc)
@@ -155,6 +155,21 @@ def _all_interior_surfaces(x):
     )
     return np.logical_and( x_mid, y_mid )
 
+def _all_exterior_surfaces(x):
+    eps = 1.0e-5
+    x_min = 0
+    x_max = L
+    y_min = 0
+    y_max = H
+
+    x_edge = np.logical_or(
+        x[0] < x_min + eps, x_max - eps < x[0]
+    )
+    y_edge = np.logical_or(
+        x[1] < y_min + eps, y_max - eps < x[1]
+    )
+    return np.logical_or( x_edge, y_edge )
+
 # boundary conditions
 v_cg2 = element("Lagrange", mesh.topology.cell_name(), 2, shape=(mesh.geometry.dim, ))
 s_cg1 = element("Lagrange", mesh.topology.cell_name(), 1)
@@ -163,6 +178,36 @@ Q = functionspace(mesh, s_cg1)
 
 fdim = mesh.topology.dim - 1
 
+# get interior points
+facet_dim = 1
+all_interior_facets = locate_entities_boundary(
+    mesh, facet_dim, _all_interior_surfaces
+)
+all_interior_V_dofs = locate_dofs_topological(
+    V, facet_dim, all_interior_facets
+)
+all_exterior_facets = locate_entities_boundary(
+    mesh, facet_dim, _all_exterior_surfaces
+)
+all_exterior_V_dofs = locate_dofs_topological(
+    V, facet_dim, all_exterior_facets
+)
+
+# Mesh
+def UDelta(x):
+    values = np.zeros((gdim, x.shape[1]), dtype=PETSc.ScalarType)
+    values[0] = 4 * x[1]
+    return values
+
+x_shift = 0.01
+y_shift = 0.1
+u_delta = UDelta()
+u_delta[0::2] = x_shift
+u_delta[1::2] = y_shift
+mesh_displacement = Function(V)
+mesh_displacement.interpolate(u_delta)
+bcx_in = dirichletbc(mesh_displacement, all_interior_V_dofs)
+bcx_out = dirichletbc(Constant(mesh, PETSc.ScalarType((0.0, 0.0))), all_exterior_V_dofs, V)
 # Inlet
 u_inlet = Function(V)
 inlet_velocity = InletVelocity(t)
@@ -177,15 +222,6 @@ bcu = [bcu_inflow, bcu_obstacle, bcu_walls]
 # Outlet
 bcp_outlet = dirichletbc(PETSc.ScalarType(0), locate_dofs_topological(Q, fdim, ft.find(outlet_marker)), Q)
 bcp = [bcp_outlet]
-
-# get interior points
-facet_dim = 1
-all_interior_facets = locate_entities_boundary(
-    mesh, facet_dim, _all_interior_surfaces
-)
-all_interior_V_dofs = locate_dofs_topological(
-    V, facet_dim, all_interior_facets
-)
 
 # show the interior degrees of freedom around the cylinder
 print(all_interior_V_dofs)
