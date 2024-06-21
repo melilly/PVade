@@ -194,20 +194,20 @@ all_exterior_V_dofs = locate_dofs_topological(
 )
 
 # Mesh
-def UDelta(x):
+def u_delta(x):
     values = np.zeros((gdim, x.shape[1]), dtype=PETSc.ScalarType)
     values[0] = 4 * x[1]
     return values
 
 x_shift = 0.01
 y_shift = 0.1
-u_delta = UDelta()
-u_delta[0::2] = x_shift
-u_delta[1::2] = y_shift
+#u_delta[0::2] = x_shift
+#u_delta[1::2] = y_shift
 mesh_displacement = Function(V)
 mesh_displacement.interpolate(u_delta)
 bcx_in = dirichletbc(mesh_displacement, all_interior_V_dofs)
 bcx_out = dirichletbc(Constant(mesh, PETSc.ScalarType((0.0, 0.0))), all_exterior_V_dofs, V)
+bcx = [bcx_in, bcx_out]
 # Inlet
 u_inlet = Function(V)
 inlet_velocity = InletVelocity(t)
@@ -274,6 +274,14 @@ A3 = assemble_matrix(a3)
 A3.assemble()
 b3 = create_vector(L3)
 
+# mesh movement
+a4 = form(inner(grad(u), grad(v)) * dx)
+zero_vec = Constant(mesh, PETSc.ScalarType((0.0, 0.0)))
+L4 = form(inner(zero_vec, v) * dx)
+A4 = assemble_matrix(a4, bcs=bcx)
+A4.assemble()
+b4 = create_vector(L4)
+
 # setup solvers
 solver1 = PETSc.KSP().create(mesh.comm)
 solver1.setOperators(A1)
@@ -293,6 +301,12 @@ solver3.setOperators(A3)
 solver3.setType(PETSc.KSP.Type.CG)
 pc3 = solver3.getPC()
 pc3.setType(PETSc.PC.Type.SOR)
+
+solver4 = PETSc.KSP().create(mesh.comm)
+solver4.setOperators(A4)
+solver4.setType(PETSc.KSP.Type.CG)
+pc4 = solver4.getPC()
+pc4.setType(PETSc.PC.Type.JACOBI)
 
 # compute drag and lift coefficients
 n = -FacetNormal(mesh)  # Normal pointing out of obstacle
@@ -378,9 +392,28 @@ for i in range(num_steps):
     solver3.solve(b3, u_.vector)
     u_.x.scatter_forward()
 
+    # Step 4: Solve for mesh movement
+    A4.zeroEntries()
+    assemble_matrix(A4, a4, bcs=bcx)
+    with b4.localForm() as loc:
+        loc.set(0)
+    assemble_vector(b4, L4)
+    apply_lifting(b4, [a4], [bcx])
+    b4.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)
+    set_bc(b4, bcx)
+    solver4.solve(b4, mesh_displacement.vector)
+    mesh_displacement.x.scatter_forward()
+
+    # Move mesh
+    with mesh_displacement.vector.localForm() as vals_local:
+        vals = vals_local.array
+        vals = vals.reshape(-1, 3)
+    mesh.geometry.x[:, :] += vals[:, :]
+
     # Write solutions to file
     vtx_u.write(t)
     vtx_p.write(t)
+    xdmf_file.write_mesh(mesh)
     xdmf_file.write_function(u_, t)
 
     # Update variable with solution form this time step
