@@ -343,6 +343,7 @@ folder.mkdir(exist_ok=True, parents=True)
 vtx_u = VTXWriter(mesh.comm, "results/dfg2D-3-u.bp", [u_], engine="BP4")
 vtx_p = VTXWriter(mesh.comm, "results/dfg2D-3-p.bp", [p_], engine="BP4")
 xdmf_file = XDMFFile(MPI.COMM_WORLD, "results/velocity.xdmf", "w")
+xdmf_file_modified = XDMFFile(MPI.COMM_WORLD, "results/mesh_moved.xdmf", "w")
 vtx_u.write(t)
 vtx_p.write(t)
 xdmf_file.write_mesh(mesh)
@@ -414,6 +415,8 @@ for i in range(num_steps):
     # Write solutions to file
     vtx_u.write(t)
     vtx_p.write(t)
+    xdmf_file_modified.write_mesh(mesh)
+    xdmf_file_modified.write_function(mesh_displacement, t)
     xdmf_file.write_function(u_, t)
     xdmf_file.write_function(mesh_displacement, t)
 
@@ -422,35 +425,19 @@ for i in range(num_steps):
         loc_n.copy(loc_n1)
         loc_.copy(loc_n)
 
-    # Compute physical quantities
+    # Compute physical quantities (just lift and drag now)
     # For this to work in paralell, we gather contributions from all processors
     # to processor zero and sum the contributions.
     drag_coeff = mesh.comm.gather(assemble_scalar(drag), root=0)
     lift_coeff = mesh.comm.gather(assemble_scalar(lift), root=0)
-    p_front = None
-    if len(front_cells) > 0:
-        p_front = p_.eval(points[0], front_cells[:1])
-    p_front = mesh.comm.gather(p_front, root=0)
-    p_back = None
-    if len(back_cells) > 0:
-        p_back = p_.eval(points[1], back_cells[:1])
-    p_back = mesh.comm.gather(p_back, root=0)
     if mesh.comm.rank == 0:
         t_u[i] = t
         t_p[i] = t - dt / 2
         C_D[i] = sum(drag_coeff)
         C_L[i] = sum(lift_coeff)
-        # Choose first pressure that is found from the different processors
-        for pressure in p_front:
-            if pressure is not None:
-                p_diff[i] = pressure[0]
-                break
-        for pressure in p_back:
-            if pressure is not None:
-                p_diff[i] -= pressure[0]
-                break
 
 # close output folders
 vtx_u.close()
 vtx_p.close()
 xdmf_file.close()
+xdmf_file_modified.close()
