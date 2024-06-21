@@ -343,7 +343,6 @@ folder.mkdir(exist_ok=True, parents=True)
 vtx_u = VTXWriter(mesh.comm, "results/dfg2D-3-u.bp", [u_], engine="BP4")
 vtx_p = VTXWriter(mesh.comm, "results/dfg2D-3-p.bp", [p_], engine="BP4")
 xdmf_file = XDMFFile(MPI.COMM_WORLD, "results/velocity.xdmf", "w")
-xdmf_file_modified = XDMFFile(MPI.COMM_WORLD, "results/mesh_moved.xdmf", "w")
 vtx_u.write(t)
 vtx_p.write(t)
 xdmf_file.write_mesh(mesh)
@@ -415,8 +414,6 @@ for i in range(num_steps):
     # Write solutions to file
     vtx_u.write(t)
     vtx_p.write(t)
-    xdmf_file_modified.write_mesh(mesh)
-    xdmf_file_modified.write_function(mesh_displacement, t)
     xdmf_file.write_function(u_, t)
     xdmf_file.write_function(mesh_displacement, t)
 
@@ -440,4 +437,3 @@ for i in range(num_steps):
 vtx_u.close()
 vtx_p.close()
 xdmf_file.close()
-xdmf_file_modified.close()
