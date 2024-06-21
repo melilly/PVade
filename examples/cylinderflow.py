@@ -9,11 +9,10 @@ from basix.ufl import element
 from ufl import (FacetNormal, Measure, TestFunction, TrialFunction,
                  as_vector, div, dot, dx, inner, lhs, grad, nabla_grad, rhs)
 
-from dolfinx.fem import (Constant, Function, functionspace, FunctionSpace,
+from dolfinx.fem import (Constant, Function, functionspace,
                          assemble_scalar, dirichletbc, form, locate_dofs_topological, set_bc)
 from dolfinx.fem.petsc import (apply_lifting, assemble_matrix, assemble_vector,
                                create_vector, create_matrix, set_bc)
-from dolfinx.geometry import bb_tree, compute_collisions_points, compute_colliding_cells
 from dolfinx.io import (VTXWriter, gmshio, XDMFFile)
 from dolfinx.mesh import locate_entities_boundary
 
@@ -133,6 +132,19 @@ class InletVelocity():
         values = np.zeros((gdim, x.shape[1]), dtype=PETSc.ScalarType)
         values[0] = 4 * 1.5 * np.sin(self.t * np.pi / 8) * x[1] * (0.41 - x[1]) / (0.41**2)
         return values
+
+class UDelta():
+    def __init__(self, t):
+        self.t = t
+
+    def __call__(self, x):
+        values = np.zeros((gdim, x.shape[1]), dtype=PETSc.ScalarType)
+        values[0] = 0.1
+        return values
+
+# currently unused
+x_shift = 0.01
+y_shift = 0.1
     
 
 ####################################################
@@ -197,15 +209,7 @@ all_exterior_V_mesh_dofs = locate_dofs_topological(
 )
 
 # Mesh
-def u_delta(x):
-    values = np.zeros((gdim, x.shape[1]), dtype=PETSc.ScalarType)
-    values[0] = 0.1
-    return values
-
-x_shift = 0.01
-y_shift = 0.1
-#u_delta[0::2] = x_shift
-#u_delta[1::2] = y_shift
+u_delta = UDelta(0)
 mesh_displacement = Function(V)
 mesh_displacement.interpolate(u_delta)
 bcx_in = dirichletbc(mesh_displacement, all_interior_V_mesh_dofs)
