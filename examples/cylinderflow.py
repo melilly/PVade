@@ -30,6 +30,7 @@ c_x = c_y = 0.2
 r = 0.05
 gdim = 2
 res_min = r / 3
+mesh_order = 2
 
 ####################################################
 #                                                  #
@@ -103,7 +104,7 @@ if mesh_comm.rank == model_rank:
     gmsh.option.setNumber("Mesh.RecombineAll", 1)
     gmsh.option.setNumber("Mesh.SubdivisionAlgorithm", 1)
     gmsh.model.mesh.generate(gdim)
-    gmsh.model.mesh.setOrder(2)
+    gmsh.model.mesh.setOrder(mesh_order)
     gmsh.model.mesh.optimize("Netgen")
 
 mesh, _, ft = gmshio.model_to_mesh(gmsh.model, mesh_comm, model_rank, gdim=gdim)
@@ -172,8 +173,10 @@ def _all_exterior_surfaces(x):
 
 # boundary conditions
 v_cg2 = element("Lagrange", mesh.topology.cell_name(), 2, shape=(mesh.geometry.dim, ))
+v_cg_mesh = element("Lagrange", mesh.topology.cell_name(), mesh_order, shape=(mesh.geometry.dim, ))
 s_cg1 = element("Lagrange", mesh.topology.cell_name(), 1)
 V = functionspace(mesh, v_cg2)
+V_mesh = functionspace(mesh, v_cg_mesh)
 Q = functionspace(mesh, s_cg1)
 
 fdim = mesh.topology.dim - 1
@@ -183,14 +186,14 @@ facet_dim = 1
 all_interior_facets = locate_entities_boundary(
     mesh, facet_dim, _all_interior_surfaces
 )
-all_interior_V_dofs = locate_dofs_topological(
-    V, facet_dim, all_interior_facets
+all_interior_V_mesh_dofs = locate_dofs_topological(
+    V_mesh, facet_dim, all_interior_facets
 )
 all_exterior_facets = locate_entities_boundary(
     mesh, facet_dim, _all_exterior_surfaces
 )
-all_exterior_V_dofs = locate_dofs_topological(
-    V, facet_dim, all_exterior_facets
+all_exterior_V_mesh_dofs = locate_dofs_topological(
+    V_mesh, facet_dim, all_exterior_facets
 )
 
 # Mesh
@@ -205,8 +208,8 @@ y_shift = 0.1
 #u_delta[1::2] = y_shift
 mesh_displacement = Function(V)
 mesh_displacement.interpolate(u_delta)
-bcx_in = dirichletbc(mesh_displacement, all_interior_V_dofs)
-bcx_out = dirichletbc(Constant(mesh, PETSc.ScalarType((0.0, 0.0))), all_exterior_V_dofs, V)
+bcx_in = dirichletbc(mesh_displacement, all_interior_V_mesh_dofs)
+bcx_out = dirichletbc(Constant(mesh, PETSc.ScalarType((0.0, 0.0))), all_exterior_V_mesh_dofs, V_mesh)
 bcx = [bcx_in, bcx_out]
 # Inlet
 u_inlet = Function(V)
@@ -222,12 +225,6 @@ bcu = [bcu_inflow, bcu_obstacle, bcu_walls]
 # Outlet
 bcp_outlet = dirichletbc(PETSc.ScalarType(0), locate_dofs_topological(Q, fdim, ft.find(outlet_marker)), Q)
 bcp = [bcp_outlet]
-
-# show the interior degrees of freedom around the cylinder
-print(all_interior_V_dofs)
-
-# show that we can shift the cylinder mesh points to the right
-#mesh.geometry.x[all_interior_V_dofs,0] += 0.01
 
 ####################################################
 #                                                  #
@@ -319,16 +316,6 @@ if mesh.comm.rank == 0:
     C_L = np.zeros(num_steps, dtype=PETSc.ScalarType)
     t_u = np.zeros(num_steps, dtype=np.float64)
     t_p = np.zeros(num_steps, dtype=np.float64)
-
-# compute pressures in front of and behind cylinder
-tree = bb_tree(mesh, mesh.geometry.dim)
-points = np.array([[0.15, 0.2, 0], [0.25, 0.2, 0]])
-cell_candidates = compute_collisions_points(tree, points)
-colliding_cells = compute_colliding_cells(mesh, cell_candidates, points)
-front_cells = colliding_cells.links(0)
-back_cells = colliding_cells.links(1)
-if mesh.comm.rank == 0:
-    p_diff = np.zeros(num_steps, dtype=PETSc.ScalarType)
 
 
 ####################################################
