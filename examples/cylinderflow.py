@@ -196,7 +196,7 @@ all_exterior_V_dofs = locate_dofs_topological(
 # Mesh
 def u_delta(x):
     values = np.zeros((gdim, x.shape[1]), dtype=PETSc.ScalarType)
-    values[0] = 4 * x[1]
+    values[0] = 0.1
     return values
 
 x_shift = 0.01
@@ -395,6 +395,7 @@ for i in range(num_steps):
     # Step 4: Solve for mesh movement
     A4.zeroEntries()
     assemble_matrix(A4, a4, bcs=bcx)
+    A4.assemble()
     with b4.localForm() as loc:
         loc.set(0)
     assemble_vector(b4, L4)
@@ -407,14 +408,14 @@ for i in range(num_steps):
     # Move mesh
     with mesh_displacement.vector.localForm() as vals_local:
         vals = vals_local.array
-        vals = vals.reshape(-1, 3)
-    mesh.geometry.x[:, :] += vals[:, :]
+        vals = vals.reshape(-1, 2)
+    mesh.geometry.x[:, :2] += vals[:, :]
 
     # Write solutions to file
     vtx_u.write(t)
     vtx_p.write(t)
-    xdmf_file.write_mesh(mesh)
     xdmf_file.write_function(u_, t)
+    xdmf_file.write_function(mesh_displacement, t)
 
     # Update variable with solution form this time step
     with u_.vector.localForm() as loc_, u_n.vector.localForm() as loc_n, u_n1.vector.localForm() as loc_n1:
