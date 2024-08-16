@@ -103,22 +103,48 @@ The simulation of FSI2 can be visualized below. The top half of the visualizatio
 Fixed Cylinder benchmark
 --------------
 
+We compared the coefficients of lift and drag on a fixed cylinder, set in a tube with constant-velocity inflow, to the coefficients recorded in Placzek et al. [2]_.
+Below, our results in orange compare favorably to their results in black.
+
 .. image:: benchmark_png/fixed_lift_drag.png
   :alt: Alternative text
+
+The noise seen in the x=[0,1] range, roughly the first six seconds of simulation, is caused by an initial 1% random perturbation per timestep per cell on the left boundary of the inflow velocity.
+The resulting discrepancies until x=1 are of no concern, and subsequent measurements match well.
 
 
 Forced Oscillation Cylinder benchmark
 --------------
 
+Here, we forced the cylinder to oscillate vertically at a constant driving frequency.
+We display frequencies as a ratio to the Strouhal frequency, which is the frequency at which the lift coefficient oscillated in the fixed cylinder case: 0.1727 Hz.
+
+Initial efforts to match phase diagrams of the lift coefficient versus position of the cylinder to those shown in Placzek et al. [2]_ failed.
+
+We measured the average drag coefficient after stabilization (we chose 58 seconds as a cutoff) and plotted that per run with respect to the driving frequency of the cylinder.
+Our results, in red below, closely match the results from Placzek et al. [2]_, in a black line, and fall between the papers they compare to, in dotted lines.
+
 .. image:: benchmark_png/forced_drag.png
   :alt: Alternative text
+
+Similarly, we plotted the maximum achieved lift coefficient after stabilization with respect to the driving frequency. 
+Again, our red-line results closely matched the black-line results of Placzek et al. [2]_, and fall near the dotted-line results they compared to. 
 
 .. image:: benchmark_png/forced_lift.png
   :alt: Alternative text
 
+We test for lock-in, the phenomena where a cylinder oscillating at near the Strouhal frequency will alter the frequency at which the wake, lift, and drag oscillate, so that they settle into a stable oscillatory pattern at the driving frequency.
+We did a parameter sweep over driving frequency and amplitude of forced oscillation.
+Cases were counted as lock-in UNLESS:
+* plotting the drag coefficient over time showed more than one visible mode after stabilization, 
+* plotting the lift coefficient over time showed more than one visible mode after stabilization,
+* plotting the Fourier transform of the lift coefficient showed a maximum at a frequency other than the driving frequency, OR
+* plotting the phase diagram of the lift coefficient versus the vertical position of the cylinder showed visible precession.
+
+Below, we compare the cases we classified as lock-in and not lock-in (unlocked) against the experimental results of Koopmann [3]_, which denote the threshold between lock-in and unlocked in black lines.
+
 .. image:: benchmark_png/forced_lockin.png
   :alt: Alternative text
-
 
 
 References
@@ -126,3 +152,5 @@ References
 .. [1] S. Turek and J. Hron, “Proposal for Numerical Benchmarking of Fluid–Structure Interaction Between an Elastic Object and Laminar Incompressible Flow,” in Fluid-Structure Interaction: Modelling, Simulation, Optimisation, 2007, doi.org/10.1007/3-540-34596-5_15
 .. [2] A. Placzek, J.F. Sigrist, and A. Hamdouni, “Numerical simulation of an oscillating cylinder in a cross-flow at low Reynolds number: Forced and free oscillations,” in Computers & 
 Fluids, 2009, doi.org/10.1016/j.compfluid.2008.01.007
+.. [3] G.H. Koopmann, “The vortex wakes of vibrating cylinders at low Reynolds numbers,” Journal of Fluid Mechanics, vol. 28, part 3, pp. 501-512, 2009, doi.org/10.1017/S0022112067002253
+
