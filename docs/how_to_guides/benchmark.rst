@@ -103,18 +103,20 @@ The simulation of FSI2 can be visualized below. The top half of the visualizatio
 Fixed Cylinder benchmark
 --------------
 
+.. image:: benchmark_png/fixed_lift_drag.png
+  :alt: Alternative text
 
 
 Forced Oscillation Cylinder benchmark
 --------------
 
-.. image:: benchmark_png/frequency_drag_comparison.png
+.. image:: benchmark_png/forced_drag.png
   :alt: Alternative text
 
-.. image:: benchmark_png/frequency_lift_comparison.png
+.. image:: benchmark_png/forced_lift.png
   :alt: Alternative text
 
-.. image:: benchmark_png/lockin.png
+.. image:: benchmark_png/forced_lockin.png
   :alt: Alternative text
 
 
