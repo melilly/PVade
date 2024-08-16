@@ -1,11 +1,15 @@
 Benchmark
 =========
 
+PVade is benchmarked with the Flag 2D example (see :ref:`Flag 2D` for setup) and the Cylinder Flow example. 
 
-The Flag 2D example is used to benchmark PVade. 
-For more detail on the Flag 2D example, you can refer to :ref:`Flag 2D`. 
-Benchmarking of PVade was done through validation of lift, drag and position of point A as described in Turek and Hron [1]_, and proceeds through three steps: (1) validation of the structure solve only (CSM3), validation of the fluid solve only (CFD3), and validation of the coupled fluid-structure interaction (FSI2).
+Benchmarking via Flag 2D was done through validation of lift, drag, and position of point A as described in Turek and Hron [1]_. 
+It proceeds through three steps: (1) validation of the structure solve only (CSM3), validation of the fluid solve only (CFD3), and validation of the coupled fluid-structure interaction (FSI2).
 
+Benchmarking via Cylinder Flow was done with validation of lift, drag, vorticity, and lock-in phenomena, in comparison with Placzek et al [2]_. 
+This additional benchmark came ahead of introducing floating PV capabilities to PVade. 
+The paper proceeds through 3 steps: (1) the periodic wake of a fixed cylinder, (2) lock-in wake frequency for a forced-oscillation cylinder, and (3) vortex-induced vibrations for a cylinder free to oscillate with the lift and drag generated from the surrounding fluid. 
+We have matched steps (1) and (2) at present.
 
 CSM3 benchmark 
 --------------
@@ -96,7 +100,27 @@ The simulation of FSI2 can be visualized below. The top half of the visualizatio
    :align: center
 
 
+Fixed Cylinder benchmark
+--------------
+
+
+
+Forced Oscillation Cylinder benchmark
+--------------
+
+.. image:: benchmark_png/frequency_drag_comparison.png
+  :alt: Alternative text
+
+.. image:: benchmark_png/frequency_lift_comparison.png
+  :alt: Alternative text
+
+.. image:: benchmark_png/lockin.png
+  :alt: Alternative text
+
+
+
 References
 ----------
 .. [1] S. Turek and J. Hron, “Proposal for Numerical Benchmarking of Fluid–Structure Interaction Between an Elastic Object and Laminar Incompressible Flow,” in Fluid-Structure Interaction: Modelling, Simulation, Optimisation, 2007, doi.org/10.1007/3-540-34596-5_15
-
+.. [2] A. Placzek, J.F. Sigrist, and A. Hamdouni, “Numerical simulation of an oscillating cylinder in a cross-flow at low Reynolds number: Forced and free oscillations,” in Computers & 
+Fluids, 2009, doi.org/10.1016/j.compfluid.2008.01.007
