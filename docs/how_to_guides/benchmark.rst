@@ -57,7 +57,7 @@ For benchmarking of the fluid analysis, we used CFD3 in Turek and Hron [1]_ and 
       Truth (CFD3)                    439.45 ± 5.6183 [4.3956]    −11.893 ± 437.81 [4.3956] 
       =============================== =========================== ========================= 
 
-The lift and Drag versus time are shown below 
+The Lift and Drag versus time are shown below 
 
 .. image:: benchmark_png/cfd3_lift_convergence.png
   :alt: alternative text

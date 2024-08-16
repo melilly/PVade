@@ -15,18 +15,18 @@ The 2D flag problem consists of a channel flow in which the fluid interacts with
 
 where: 
 
-L is the length of the domain 
-H is the height of the domain 
-l is the lentgh of the flag 
-h is the thickness of the flag 
+* L is the length of the domain 
+* H is the height of the domain 
+* l is the length of the flag 
+* h is the thickness of the flag 
 
 
 .. image:: pictures/2dflag/flag_dimensions.png
   :alt: Alternative text
 
-C is the center of the circle 
-r is the radius of the circle
-A is the measurment point for benchmarking  
+* C is the center of the circle 
+* r is the radius of the circle
+* A is the measurment point for benchmarking  
 
 
 For the upcoming benchmarks the following values are used:
@@ -52,7 +52,7 @@ For the upcoming benchmarks the following values are used:
 Structural Benchmarking
 -----------------------
 
-The Benchmarking of the structural solver is follows the CSM3 example in Turek and Hron [1]_.
+The Benchmarking of the structural solver follows the CSM3 example in Turek and Hron [1]_.
 
 In CSM3, the structural tests are computed only for the elastic beam
 (without the surrounding fluid) adding the gravitational force only on
